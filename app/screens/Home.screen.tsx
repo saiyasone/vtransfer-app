@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { Fragment, useEffect, useState } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import MuiIcon from 'react-native-vector-icons/MaterialCommunityIcons';
 import MainLayoutContainer from '../components/MainLayoutContainer';
 import ImagePicker from '../features/Home/components/ImagePicker';
@@ -42,9 +42,11 @@ const Home = () => {
   return (
     <Fragment>
       <MainLayoutContainer>
-        <Text>Home - {user.username?.toUpperCase()} </Text>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <Text>Home - {user.username?.toUpperCase()} </Text>
 
-        <ImagePicker />
+          <ImagePicker />
+        </ScrollView>
         {/* <FileCardItem /> */}
       </MainLayoutContainer>
     </Fragment>

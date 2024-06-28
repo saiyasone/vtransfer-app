@@ -6,9 +6,9 @@ export type AuthProviderProp = {
 };
 
 export interface IAuthContext {
-  isLoggedIn: boolean;
   user?: IUser | any;
   token: string;
   error?: string;
+  isLoggedIn?: boolean;
   loading?: boolean;
 }

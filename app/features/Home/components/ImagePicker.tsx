@@ -1,23 +1,29 @@
 import React, { Fragment, useState } from 'react';
-import { Image, Text, View } from 'react-native';
+import { Image, Text, TouchableOpacity, View } from 'react-native';
 import { Asset, launchImageLibrary } from 'react-native-image-picker';
 import { Button } from 'react-native-paper';
+import MuiIcon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { getFileDateCreated } from '../../../utils/file.util';
+import { convertBytetoMBandGB } from '../../../utils/storage.util';
 
 const ImagePicker = () => {
-  const [files, setFiles] = useState<Asset[]>([]);
+  const [files, setFiles] = useState<Asset[] | any[]>([]);
 
   const handleFilePicker = async () => {
     const response = await launchImageLibrary({
       mediaType: 'mixed',
-
-      //   selectionLimit: 5,
     });
 
-    const fileArrays: Asset[] =
-      (await response.assets?.map((file, index) => ({
-        index,
-        ...file,
-      }))) || [];
+    const fileArrays: Asset[] = await Promise.all(
+      response?.assets?.map(async (file, index) => {
+        const fileDate = await getFileDateCreated(file.uri || '');
+        return {
+          index,
+          ...file,
+          fileDate,
+        };
+      }) || [],
+    );
 
     setFiles((prev) => [...prev, ...fileArrays]);
   };
@@ -46,32 +52,66 @@ const ImagePicker = () => {
         </Button>
       </View>
 
-      {files.map((file, index) => {
-        return (
-          <Fragment key={index}>
-            {file.type?.startsWith('image') ? (
-              <View>
-                <Image
-                  width={100}
-                  height={100}
-                  resizeMode='cover'
-                  source={{ uri: file.uri }}
-                />
-                <Text>{file.fileName}</Text>
+      <View
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 20,
+        }}
+      >
+        {files.map((file, index) => {
+          return (
+            <Fragment key={index}>
+              <View
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                {file.type?.startsWith('image') ? (
+                  <View>
+                    <Image
+                      width={60}
+                      height={60}
+                      resizeMode='cover'
+                      source={{ uri: file.uri }}
+                      style={{ borderRadius: 10 }}
+                    />
+                  </View>
+                ) : file.type?.startsWith('video') ? (
+                  <View>
+                    <Image
+                      width={60}
+                      height={60}
+                      resizeMode='cover'
+                      style={{ borderRadius: 10 }}
+                      source={require('../../../assets/images/video-player.png')}
+                    />
+                  </View>
+                ) : (
+                  <Text>{file.fileName}</Text>
+                )}
+
+                <Fragment>
+                  <View style={{ display: 'flex', gap: 2 }}>
+                    <Text style={{ fontWeight: 600 }}> {file.fileName} </Text>
+                    <Text> {convertBytetoMBandGB(file.fileSize || 0)} </Text>
+                    <Text>{file?.fileDate}</Text>
+                  </View>
+                </Fragment>
+
+                <Fragment>
+                  <TouchableOpacity>
+                    <MuiIcon name='trash-can-outline' size={22} />
+                  </TouchableOpacity>
+                </Fragment>
               </View>
-            ) : file.type?.startsWith('video') ? (
-              <View>
-                <Image
-                  source={require('../../../assets/images/video-player.png')}
-                />
-                <Text>{file.fileName}</Text>
-              </View>
-            ) : (
-              <Text>{file.fileName}</Text>
-            )}
-          </Fragment>
-        );
-      })}
+            </Fragment>
+          );
+        })}
+      </View>
     </View>
   );
 };

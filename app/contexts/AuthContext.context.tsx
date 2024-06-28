@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import React, { createContext, useReducer } from 'react';
+import React, { createContext, useEffect, useReducer } from 'react';
 import useLocalStorage from '../hooks/useSession';
 import AuthService from '../services/auth.service';
 import { AuthProviderProp, IAuthContext } from './types/auth.context';
@@ -34,13 +34,13 @@ const reducer = (state = initialState, action: Action) => {
         isLoggedIn: true,
         user: action.payload.user,
         token: action.payload.token,
-
-        loading: true,
       };
 
-    case typeReducer.SIGN_UP: {
+    case typeReducer.SIGN_UP:
       return { ...state };
-    }
+
+    default:
+      return { ...state };
   }
 };
 
@@ -50,6 +50,26 @@ const AuthProvider = ({ children }: AuthProviderProp) => {
   const authService = new AuthService();
   const localStorage = useLocalStorage();
 
+  const initialzeApp = async () => {
+    try {
+      const accessToken = localStorage.useGetStorage('accessToken');
+      const userData = localStorage.useGetStorage('userData');
+      if (!accessToken) {
+        return;
+      }
+
+      dispatch({
+        type: typeReducer.SIGN_IN,
+        payload: {
+          user: userData,
+          token: accessToken,
+        },
+      });
+    } catch (error) {
+      throw error;
+    }
+  };
+
   const signIn = async (username: string, password: string) => {
     try {
       authService.setUsername(username);
@@ -57,7 +77,7 @@ const AuthProvider = ({ children }: AuthProviderProp) => {
 
       const response = await authService.login();
       localStorage.useSession(response.accessToken, response.userData);
-      await router.navigate('Tab');
+      await router.navigate('SignIn');
 
       dispatch({
         type: typeReducer.SIGN_IN,
@@ -81,15 +101,19 @@ const AuthProvider = ({ children }: AuthProviderProp) => {
 
   const signOut = async () => {
     try {
-      await localStorage.useClearSession();
       await router.navigate('SignIn');
+      // await localStorage.useClearSession();
     } catch (error) {
       throw error;
     }
   };
 
+  useEffect(() => {
+    initialzeApp();
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ ...state, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ state, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );
